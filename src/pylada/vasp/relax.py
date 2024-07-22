@@ -570,3 +570,234 @@ iter_epitaxial.Extract = RelaxExtract
 Epitaxial = makeclass('Epitaxial', Vasp, iter_epitaxial, None, module='pylada.vasp.relax',
                       doc='Functional form of the :py:class:`pylada.vasp.relax.iter_epitaxial` method.')
 epitaxial = makefunc('epitaxial', iter_epitaxial, module='pylada.vasp.relax')
+
+# colton_mod_start: Add iter_training method, either for NSW=2 boondoggle 
+# or to try and check job progress while it is running
+
+def iter_training(vasp, structure, outdir=None, first_trial=None,
+               maxcalls=50, nofail=False,
+               convergence=None, minrelsteps=-1,
+               **kwargs):
+    """ Iterator over calls to VASP during relaxation.
+
+        This generator iterates over successive VASP calculations until a fully
+        relaxed structure is obtained. Its last calculation is *static*, ensuring
+        that the final electronic structure accurately represents the relaxed
+        structure.
+
+        The full process is to first relax the cell-shape (and internal degrees of
+        freedom upon request) until convergence is achieved, as determined by the
+        difference in total energies (see the keyword argument ``convergence``)
+        within the current VASP run. Subsequent runs keep the cell-shape constant
+        while allowing ionic degrees of freedom to relax, until the same
+        convergence criteria is achieved. Finally, a static calculation is
+        performed.
+
+        It is possible to bypass cell-shape relaxations and perform only
+        ionic-relaxations.
+
+        :param vasp:
+          :py:class:`Vasp <pylada.vasp.functional.Vasp>` object with which to
+          perform the relaxation.
+        :param structure:
+          :py:class:`Structure <pylada.crystal.Structure>` object for which to
+          perform the relaxation.
+        :param outdir:
+          Directory where to perform the calculations. Defaults to current
+          working directory. The actual calculations are stored within the
+          *relax* subdirectory.
+        :param dict first_trial:
+          Holds parameters which are used only for the very first VASP
+          calculation. It can be used to accelerate the first step of the
+          relaxation if starting far from the optimum. Defaults to empty
+          dictionary.
+        :param int maxcalls:
+          Maximum number of calls to VASP before aborting. Defaults to 10.
+        :param bool nofail:
+          If True, will not fail if convergence is not achieved. Just keeps going. 
+          Defaults to False.
+        :param convergence:
+          Convergence criteria. If ``minrelsteps`` is positive, it is only
+          checked after ``minrelsteps`` have been performed. Convergence is
+          checked according to last VASP run, not from one VASP run to another.
+          Eg. If a positive real number, convergence is achieved when the
+          difference between the last two total-energies of the current run fall
+          below that real number (times structure size), not when the total
+          energies of the last two runs fall below that number. Faster, but
+          possibly less safe.
+
+          * None: defaults to ``vasp.ediff * 1e1``
+          * positive real number: energy convergence criteria in eV per atom. 
+          * negative real number: force convergence criteria in eV/angstrom. 
+          * callable: Takes an extraction object as input. Should return True if
+            convergence is achieved and False otherwise.
+        :param int minrelsteps:
+          Fine tunes how convergence criteria is applied.
+
+          * positive: at least ``minrelsteps`` calls to VASP are performed before
+            checking for convergence. If ``relaxation`` contains "cellshape",
+            then these calls occur during cellshape relaxation. If it does not,
+            then the calls occur during the ionic relaxations. The calls do count
+            towards ``maxcalls``.
+          * negative (default): argument is ignored.
+        :param kwargs:
+          Other parameters are applied to the input
+          :py:class:`~pylada.vasp.functional.Vasp` object.
+
+        :return: At each step, yields an extraction object if the relevant VASP
+                 calculation already exists. Otherwise, it yields a
+                 :py:class:`~pylada.process.program.ProgramProcess` object
+                 detailing the call to the external VASP program.
+    """
+    from re import sub
+    from copy import deepcopy
+    from os import getcwd
+    from os.path import join
+    from shutil import rmtree
+    from ..misc import RelativePath
+    from ..error import ExternalRunFailed
+
+    logger.debug("vasp/relax: iter_training: entry.  type(vasp): %s" % (type(vasp)))
+    logger.debug('vasp/relax: iter_training: entry. === start vasp:\n%s' % repr(vasp))
+    logger.debug('===== end vasp')
+    logger.debug('vasp/relax: iter_training: entry. structure:\n%s' % structure)
+    logger.debug('vasp/relax: iter_training: type(structure): %s' % type(structure))
+    logger.debug('vasp/relax: iter_training: entry.  outdir: %s' % outdir)
+    logger.debug('vasp/relax: iter_training: entry.  maxcalls: %s' % maxcalls)
+    logger.debug('vasp/relax: iter_training: entry.  nofail: %s' % nofail)
+    logger.debug('vasp/relax: iter_training: entry.  convergence: %s' % convergence)
+    logger.debug('vasp/relax: iter_relax: entry.  minrelsteps: %s' % minrelsteps)
+    logger.debug('vasp/relax: iter_training: entry.  kwargs: %s' % kwargs)
+
+    # make this function stateless.
+    vasp = deepcopy(vasp)
+    relaxed_structure = structure.copy()
+    if first_trial is None:
+        first_trial = {}
+    outdir = getcwd() if outdir is None else RelativePath(outdir).path
+    logger.debug("vasp/relax: iter_training: final outdir: %s\n" % outdir)
+
+    # convergence criteria and behavior.
+    is_converged = _get_is_converged(
+        vasp, relaxed_structure, convergence=convergence,
+        **kwargs)
+
+    # number of restarts.
+    nb_steps, output = 0, None
+
+    # defaults to vasp.relaxation
+    relaxation = kwargs.pop('relaxation', vasp.relaxation)
+    # could be that relaxation comes from vasp.relaxation which is a tuple.
+    if isinstance(relaxation, tuple):
+        vasp = deepcopy(vasp)
+        vasp.relaxation = relaxation
+        relaxation = relaxation[0]
+
+    # performs cellshape relaxation calculations.
+    while (maxcalls <= 0 or nb_steps < maxcalls):
+        # sets parameter dictionary for cellshape relaxations
+        # using existing first_trial dictionary attribute
+        if first_trial is not None:
+            params = kwargs.copy()
+            params.update(first_trial)
+        else:
+            params = kwargs
+        # Invokes vasp/functional.Vasp.__init__
+        # and vasp/functional: iter, which calls bringup,
+        # which calls write_incar, write_kpoints, etc.
+        fulldir = join(outdir, "relax_cellshape", str(nb_steps))
+        for u in vasp.iter\
+                (
+                    relaxed_structure,
+                    outdir=fulldir,
+                    restart=output,
+                    relaxation=relaxation,
+                    **params
+                ):
+            yield u
+
+        output = vasp.Extract(join(outdir, "relax_cellshape", str(nb_steps)))
+        if not output.success:
+            ExternalRunFailed("VASP calculations did not complete.")
+        relaxed_structure = output.structure
+
+        nb_steps += 1
+        
+                
+        # check for cellshape convergence.
+        # will return False if nb_steps < min_rel_steps.
+        isConv = is_converged(output)
+        
+        # performs ionic calculation.
+        if len(first_trial) != 0:
+            params = kwargs
+        fulldir = join(outdir, "relax_ions", str(nb_steps))
+        for u in vasp.iter\
+                (
+                    relaxed_structure,
+                    outdir=fulldir,
+                    relaxation="ionic",
+                    restart=output,
+                    **params
+                ):
+            yield u
+
+        output = vasp.Extract(join(outdir, "relax_ions", str(nb_steps)))
+        if not output.success:
+            ExternalRunFailed("VASP calculations did not complete.")
+        relaxed_structure = output.structure
+        
+        nb_steps += 1
+        
+        if isConv:
+            break
+
+
+
+    # Raise error if convergence not reached.
+    if nofail == False and is_converged(output) == False:
+        raise ExternalRunFailed("Could not converge cell-shape in {0} iterations.".format(maxcalls))
+
+    # xxxxxxxxxxxxxxxxx start here
+    # xxx set INCAR parameters by:
+    #  vasp._input['xxxxxfoobar'] = 'xxxxxFOOBAREDxxxxx'
+    # Similarly, in the files test/highthroughput/input*.py,
+    # one can use the same assignment.
+
+    
+    # Does not perform static calculation if convergence not reached.
+    if nofail == False and is_converged(output) == False:
+        raise ExternalRunFailed("Could not converge ions in {0} iterations.".format(maxcalls))
+
+    # performs final calculation outside relaxation directory.
+
+    # xxx skip if gwmod:
+    # gwmod: if relaxation.find("relgw") == -1 ...
+
+    for u in vasp.iter\
+            (
+                relaxed_structure,
+                outdir=outdir,
+                relaxation="static",
+                restart=output,
+                **kwargs
+            ):
+        yield u
+
+    output = vasp.Extract(outdir)
+    if not output.success:
+        ExternalRunFailed(
+            "VASP calculations did not complete.")
+
+    # yields final extraction object.
+    yield iter_training.Extract(outdir)
+
+
+iter_training.Extract = RelaxExtract
+""" Extraction method for relaxation runs. """
+
+training = makefunc('training', iter_training, module='pylada.vasp.relax')
+Training = makeclass('Training', Vasp, iter_training, None, module='pylada.vasp.relax',
+                  doc='Functional form of the :py:class:`pylada.vasp.relax.iter_training` method.')
+
+# colton_mod_end
