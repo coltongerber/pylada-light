@@ -147,3 +147,4 @@ shell.nix
 .vim/
 .direnv/
 .clang
+.DS_Store
