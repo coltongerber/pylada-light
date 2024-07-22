@@ -680,6 +680,18 @@ class ExtractBase(object):
             return None
         else:
             return result.group(1) == 'T'
+    
+    @property
+    @make_cached
+    def gga(self):
+        """ Greps GGA from OUTCAR. """
+        result = self._find_first_OUTCAR(r"""\s*GGA\s*=\s*(\w+)\s+""")
+        if result is None:
+            return None
+        else:
+            return result.group(1)
+        # colton_mod_end
+        
     @property
     @make_cached
     def lreal(self):
