@@ -192,7 +192,6 @@ def iter_relax(vasp, structure, outdir=None, first_trial=None,
     logger.debug('vasp/relax: iter_relax: entry.  outdir: %s' % outdir)
     logger.debug('vasp/relax: iter_relax: entry.  first_trial: %s' % first_trial)
     logger.debug('vasp/relax: iter_relax: entry.  maxcalls: %s' % maxcalls)
-    logger.debug('vasp/relax: iter_relax: entry.  maxcalls: %s' % maxcalls)
     # colton_mod_start: Print warning for maxcalls/maxiter
     logger.warning('vasp/relax: iter_relax: entry.  Setting maxcalls with maxiter does not work!!! It is hardcoded into vasp.relax.iter_relax')
     # colton_mod_end
