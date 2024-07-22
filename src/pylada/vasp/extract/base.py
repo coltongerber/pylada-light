@@ -1147,7 +1147,10 @@ class ExtractBase(object):
     @make_cached
     def nbprocs(self):
         """ Number of bands in calculation. """
-        result = self._find_first_OUTCAR(r"""running\s+on\s+(\d+)\s+nodes""")
+        # colton_mod_start
+        # result = self._find_first_OUTCAR(r"""running\s+on\s+(\d+)\s+nodes""")
+        result = self._find_first_OUTCAR(r"""running\s+on\s+(\d+)\s+total\s+cores""")
+        # colton_mod_end
         if result is None:
             raise GrepError("Could not find number of processes in OUTCAR.")
         return int(result.group(1))
