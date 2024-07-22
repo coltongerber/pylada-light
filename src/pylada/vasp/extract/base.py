@@ -1842,6 +1842,118 @@ class ExtractBase(object):
                     slurm_dict[setting[0]] = setting[1]
         
         return slurm_dict
+
+    
+    def _find_outcars(self):
+        """ Builds list of OUTCARS from relaxation. """
+        import os
+
+        relax_dir = self.directory
+        outcars=[]
+        for root, dirs, files in os.walk(relax_dir):
+            for name in files:
+                filepath=os.path.join(root, name)
+                if filepath.split('/')[-1]=='OUTCAR':
+                    outcars.append(filepath)
+        return outcars
+
+    @property
+    @make_cached
+    def compTime(self):
+        """ Sum of times listed at end of OUTCARs for all restarts, 
+            converted to hours. USE CAUTION, as OUTCARS that have 
+            been overwritten due to restarts are not counted as of
+            Jul 22 2024.
+        """
+        from quantities import hour
+        from numpy import array
+        
+        outcars = self._find_outcars()
+        #Summing over all OUTCARs
+        dir_hrs=0
+        for path in outcars:
+            a_file = open(path,'r')
+            hrs=0
+            # found_time = False
+            if 'profiling' in self.functional.program:
+                # 68 is minimum, extra added in case of \
+                # accidental newlines at end
+                lines=a_file.readlines()[-73:]
+                for line in lines:
+                    if 'total_time' in line:
+                        split_line=line.split()
+                        if len(split_line) == 3:
+                            hrs=float(split_line[-2])/3600
+                        elif len(split_line) == 5:
+                            hrs=float(split_line[-3])/3600
+                        # found_time = True
+                        break
+            else:
+                # 8 is minimum, extra added in case of \
+                # accidental newlines at end
+                lines=a_file.readlines()[-13:]
+                for line in lines:
+                    if 'Elapsed time' in line:
+                        hrs=float(line.split()[-1])/3600
+                        # found_time = True
+                        break
+            a_file.close()
+            # if not found_time:
+            #    err_path = path[:-6] + 'stderr'
+            #    err_file = open(err_path,'r')
+            #    err_lines = err_file.readlines()
+            #    for line in err_lines:
+            #        if 'DUE TO TIME LIMIT' in line:
+            #            wall_time = self.pbsscript['--time']
+            #            wall_time = wall_time.split(':')
+            #            i = 0
+            #            wall_time.reverse()
+            #            for time in wall_time:
+            #                time = float(time)
+            #                hrs+= time * (60**i) / 3600
+            #                i+=1
+            #    err_file.close()
+            dir_hrs+=hrs
+        return array(round(dir_hrs, 4)) * hour
+        
+    @property
+    @make_cached
+    def fftTime(self):
+        """ Sum of fft process times listed at end of OUTCARs 
+            for all restarts, converted to hours.
+            WARNING: VASP must be compiled with -DPROFILING
+            for this to work, and 'profiling' must be in the
+            absolute path of the executable.
+        """
+        from quantities import hour
+        from numpy import array
+
+        outcars = self._find_outcars()
+        #Summing over all OUTCARs
+        dir_hrs=0
+        for path in outcars:
+            a_file = open(path,'r')
+            hrs=0
+            if 'profiling' in self.functional.program:
+                # 66 is minimum, extra added in case of \
+                # accidental newlines at end
+                lines=a_file.readlines()[-71:]
+                for line in lines:
+                    if 'fft' in line:
+                        split_line=line.split()
+                        hrs+=float(split_line[-2])/3600
+            a_file.close()
+            dir_hrs+=hrs
+        return array(round(dir_hrs, 4)) * hour
+        
+    @property
+    @make_cached
+    def fftFrac(self):
+        """ WARNING: VASP must be compiled with -DPROFILING
+            for this to work, and 'profiling' must be in the
+            absolute path of the executable.
+        """
+        return round(self.fftTime / self.compTime, 4)
     def __dir__(self):
         """ Attributes and members of this class.
 
