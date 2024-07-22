@@ -149,7 +149,10 @@ def launch(self, event, jobfolders):
             pbsargs['name'] = name if len(name)                                      \
                 else "{0}-root".format(basename(path))
             pbsargs['directory'] = str(directory)
-            pbsargs['logging'] = 'critical'
+            # colton_mod_start: Change logging level to debug
+            # pbsargs['logging'] = 'critical'
+            pbsargs['logging'] = 'debug'
+            # colton_mod_end
             pbsargs['testValidProgram'] = testValidProgram
 
             pbsargs['scriptcommand']                                                 \

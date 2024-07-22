@@ -38,9 +38,11 @@ def main():
     # below would go additional imports.
 
     parser = ArgumentParser(prog="runone", description=re.sub("\\s+", " ", __doc__[1:]))
-
-    parser.add_argument('--logging', dest="logging", default="critical", type=str,
+    # colton_mod_start: Change logging level to debug
+    # parser.add_argument('--logging', dest="logging", default="critical", type=str,
+    parser.add_argument('--logging', dest="logging", default="debug", type=str,
                         help="Debug level.")
+    # colton_mod_end
     parser.add_argument('--testValidProgram', dest="testValidProgram",
                         default=None, type=str,
                         help="testValidProgram")
@@ -66,7 +68,9 @@ def main():
 
     from pylada import logger
     logger.setLevel(level=options.logging.upper())
-
+    # colton_mod_start: Print logger level setting
+    print(f'Logger level set to {options.logging.upper()}')
+    # colton_mod_end
     from pylada.misc import setTestValidProgram
     tstPgm = options.testValidProgram
     if tstPgm.lower() == 'none':
