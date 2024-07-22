@@ -55,7 +55,10 @@ def main():
                         help="Number of processors with which to launch job.")
     parser.add_argument('--ppn', dest="ppn", default=pylada.default_comm['ppn'], type=int,
                         help="Number of processors with which to launch job.")
-    parser.add_argument('--timeout', dest="timeout", default=300, type=int,
+    # colton_mod_start: Reduce timeout to 30s, probably bad idea if locking with lockfile still enabled
+    #  parser.add_argument('--timeout', dest="timeout", default=300, type=int,
+    parser.add_argument('--timeout', dest="timeout", default=30, type=int,
+    # colton_mod_end
                         help="Time to wait for job-dictionary to becom available "
                              "before timing out (in seconds). A negative or null "
                              "value implies forever. Defaults to 5mn.")
