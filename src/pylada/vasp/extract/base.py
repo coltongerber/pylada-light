@@ -787,7 +787,20 @@ class ExtractBase(object):
                         break
                     result.append(data[:3])
                 return array(result, dtype="float64")
+    # colton_mod_start
+    @property
+    @make_cached
+    def kgrid(self):
+        """ Greps k-grid settings from OUTCAR, 
+            e.g. generate k-points for:    3    3    3
+        """
+        from numpy import array
 
+        result = self._find_first_OUTCAR(r"generate k-points for:\s*(\d+)\s*(\d+)\s*(\d+)")
+        if result is None:
+            return None
+        return array([int(result.group(1)), int(result.group(2)), int(result.group(3))])
+    # colton_mod_end
     @property
     @make_cached
     def multiplicity(self):
