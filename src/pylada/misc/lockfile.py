@@ -74,6 +74,7 @@ class LockFile(object):
                 pass
         start_time = time.time()
         # loops until acqires lock.
+        # colton_mod_start
         while self._owns_lock == False:
             # tries to create director.
             try:
@@ -81,18 +82,23 @@ class LockFile(object):
                 mkdir(self.lock_directory)
             # if fails, then another process already created it. Just keep looping.
             except error:
-                self._owns_lock = False
+                pass
+                # self._owns_lock = False
+                # time.sleep(self.sleep)
+        # colton_mod_end
                 # 2013-11-11: disable timeout to make it try forever,
                 # since timeouts are causing large runs to fail.
                 # if self.timeout is not None:
                 #  if time.time() - start_time > self.timeout:
                 #    raise RuntimeError("Could not acquire lock on file {0}.".format(self.filename))
-                time.sleep(self.sleep)
 
     def __del__(self):
         """ Deletes hold on object. """
-        if self.owns_lock:
-            self.release()
+        # colton_mod_start
+        # if self.owns_lock:
+        #     self.release()
+        return
+        # colton_mod_end
 
     def __enter__(self):
         """ Enters context. """
@@ -132,16 +138,13 @@ class LockFile(object):
             It is also an error to release a lock which is not locked.
             Makes sure things are syncro. The latter is an internal bug though.
         """
-        from os import rmdir
-        assert self._owns_lock, IOError("Filelock object does not own lock.")
-        assert self.is_locked, IOError("Filelock object owns an unlocked lock.")
+        # colton_mod_start
+        # from os import rmdir
+        # assert self._owns_lock, IOError("Filelock object does not own lock.")
+        # assert self.is_locked, IOError("Filelock object owns an unlocked lock.")
         self._owns_lock = False
-        rmdir(self.lock_directory)
-
-    def __del__(self):
-        """ Releases lock if still held. """
-        if self.owns_lock and self.is_locked:
-            self.release()
+        # rmdir(self.lock_directory)
+        # colton_mod_end
 
     def remove_stale(self):
         """ Removes a stale lock. """
