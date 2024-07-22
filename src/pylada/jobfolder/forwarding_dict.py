@@ -279,7 +279,8 @@ class ForwardingDict(MutableMapping):
         if len(self) == 0:
             return '{}'
         if len(self) == 1:
-            return "{{'{0}': {1}}}".format(self.keys()[0], repr(self.values()[0]))
+            # colton_bug return "{{'{0}': {1}}}".format(self.keys()[0], repr(self.values()[0]))
+            return "{{'{0}': {1}}}".format(list(self.keys())[0], repr(list(self.values())[0]))
         string = "{\n"
         m = max(len(k) for k in self.keys())
         for k, v in self.items():
