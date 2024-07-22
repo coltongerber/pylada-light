@@ -1954,6 +1954,103 @@ class ExtractBase(object):
             absolute path of the executable.
         """
         return round(self.fftTime / self.compTime, 4)
+
+    def _count_dirs(self, path):
+        import os
+        folders = 0
+        for _, dirnames, _ in os.walk(path):
+            # ^ this idiom means "we won't be using this value"
+            # files += len(filenames)
+            folders += len(dirnames)
+        return folders
+    
+    @property
+    def _count_steps(self, outcar_path):
+        import re
+        with open(outcar_path, 'r') as file:
+            ionic_steps = 0
+            elec_steps = 0
+            lines = file.readlines()
+            lines.reverse()
+            for line in lines:
+                if 'Iteration' in line:
+                    line = re.split('\s+|\(|\)', line)
+                    ionic_steps = line[1]
+                    elec_steps = line[2]
+                    return ionic_steps, elec_steps
+
+    @property
+    def _count_dirs_steps(self, path=None):
+        import os
+        dirs = os.listdir(path).sort()
+        starts = len(dirs)
+        current_outcar_path = os.path.join(path, dirs[-1], 'OUTCAR')
+        ionic_steps, elec_steps = self._count_steps(current_outcar_path)
+        return starts, ionic_steps, elec_steps
+    
+    @property
+    def progress(self):
+        import os
+        progress_dict = {}
+        if self.success:
+            progress_dict['success'] = True
+        else:
+            print('Run not completed.')
+            sc_outcar_path = os.path.join(self.directory, 'OUTCAR')
+            if os.path.exists(sc_outcar_path):
+                print('Self-consistent OUTCAR found.')
+                ion_steps, elec_steps = self._count_steps(sc_outcar_path)
+                progress_dict['running self-consistent'] = True
+                progress_dict['on ionic step'] = ion_steps
+                progress_dict['on electronic step'] = elec_steps
+            else:
+                print('No self-consistent OUTCAR.')
+                ion_path = os.path.join(self.directory, 'relax_ions')
+                if os.path.exists(ion_path):
+                    print('Ions being relaxed.')
+                    starts, ion_steps, elec_steps = self._count_dirs_steps(ion_path)
+                    progress_dict['relax_ions starts'] = starts
+                    progress_dict['on ionic step'] = ion_steps
+                    progress_dict['on electronic step'] = elec_steps
+                else:
+                    print('Not yet to ion-only relaxation.')
+                    cellshape_path = os.path.join(self.directory, 'relax_cellshape')
+                    print(f'cellshape_path is {cellshape_path} of type {type(cellshape_path)}')
+                    if os.path.exists(cellshape_path):
+                        print('Cellshape dir exists.')
+                        starts, ion_steps, elec_steps = self._count_dirs_steps(self, path=cellshape_path)
+                        progress_dict['relax_cellshape starts'] = starts
+                        progress_dict['on ionic step'] = ion_steps
+                        progress_dict['on electronic step'] = elec_steps
+                    else:
+                        print('Nothing started yet.')
+                        progress_dict['started'] = False
+        return progress_dict
+    
+    @property
+    @make_cached
+    def total_energies_restarts(self):
+        from . import Extract
+        energy_list = []
+        files = self._find_outcars()
+        files = sorted(files)
+        scf_outcar = files[0]
+        files.remove(scf_outcar)
+        files.append(scf_outcar)
+        for file in files:
+            extr = Extract(file)
+            energy_list.append(extr.total_energies.magnitude)
+        return energy_list
+    
+    # @property
+    # @make_cached
+    # def total_energy_differences(self):
+        """ Sum of times listed at end of OUTCARs for all steps,
+            converted to hours.
+        """
+    # import os
+    # colton_mod_end
+
     def __dir__(self):
         """ Attributes and members of this class.
 
