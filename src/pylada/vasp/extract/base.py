@@ -652,10 +652,24 @@ class ExtractBase(object):
     @make_cached
     def metagga(self):
         """ Greps METAGGA from OUTCAR. """
-        result = self._find_first_OUTCAR(r"""\s*METAGGA\s*=\s*(T|F)\s+""")
+        # colton_mod_start
+        print(
+        """
+        The method metagga() appears broken, as even using r2SCAN results in two 
+        'METAGGA = ' lines in the OUTCAR, one equal to R2SCA and one 
+        equal to F. This is even the case for the output files provided
+        by the r2SCAN paper authors.
+        """
+        )
+        # result = self._find_first_OUTCAR(r"""\s*METAGGA\s*=\s*(T|F)\s+""")
+        # if result is None:
+            # return None
+        # return result.group(1) == 'T'
+        result = self._find_first_OUTCAR(r"""\s*METAGGA\s*=\s*(\w+)\s+""")
         if result is None:
             return None
-        return result.group(1) == 'T'
+        else:
+            return result.group(1)
 
     @property
     @make_cached
