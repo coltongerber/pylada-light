@@ -92,7 +92,7 @@ def main():
     # Set up mpi processes.
     pylada.default_comm['ppn'] = options.ppn
     pylada.default_comm['n'] = options.nbprocs
-    if testValidProgram == None:
+    if testValidProgram is None:
         create_global_comm(options.nbprocs)   # Sets pylada.default_comm
     else:
         pylada.default_comm = None            # use testValidProgram
@@ -116,7 +116,7 @@ def main():
         logger.info('ipy/lau/scattered_script: before compute for name: %s' % name)
 
         comm = pylada.default_comm
-        if testValidProgram != None:
+        if testValidProgram is not None:
             comm = None
         jobfolder[name].compute(comm=comm, outdir=name)
         logger.info('ipy/lau/scattered_script: after compute for name: %s' % name)
