@@ -97,9 +97,10 @@ class RelaxExtract(Extract):
                     is_run = True
         return is_run
 
-
+# colton_mod: Change maxcalls to 20 as it seems hardcoded without a way to change it.
+# The vasp.maxiter line in HT_relax does not appear to do anything as there is no maxiter.
 def iter_relax(vasp, structure, outdir=None, first_trial=None,
-               maxcalls=10, keepsteps=True, nofail=False,
+               maxcalls=20, keepsteps=True, nofail=False,
                convergence=None, minrelsteps=-1, **kwargs):
     """ Iterator over calls to VASP during relaxation.
 
@@ -191,6 +192,10 @@ def iter_relax(vasp, structure, outdir=None, first_trial=None,
     logger.debug('vasp/relax: iter_relax: entry.  outdir: %s' % outdir)
     logger.debug('vasp/relax: iter_relax: entry.  first_trial: %s' % first_trial)
     logger.debug('vasp/relax: iter_relax: entry.  maxcalls: %s' % maxcalls)
+    logger.debug('vasp/relax: iter_relax: entry.  maxcalls: %s' % maxcalls)
+    # colton_mod_start: Print warning for maxcalls/maxiter
+    logger.warning('vasp/relax: iter_relax: entry.  Setting maxcalls with maxiter does not work!!! It is hardcoded into vasp.relax.iter_relax')
+    # colton_mod_end
     logger.debug('vasp/relax: iter_relax: entry.  keepsteps: %s' % keepsteps)
     logger.debug('vasp/relax: iter_relax: entry.  nofail: %s' % nofail)
     logger.debug('vasp/relax: iter_relax: entry.  convergence: %s' % convergence)
