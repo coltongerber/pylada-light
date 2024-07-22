@@ -673,6 +673,15 @@ class ExtractBase(object):
 
     @property
     @make_cached
+    def luse_vdw(self):
+        """ Greps LUSE_VDW from OUTCAR. """
+        result = self._find_first_OUTCAR(r"""\s*LUSE_VDW\s*=\s*(T|F)\s+""")
+        if result is None:
+            return None
+        else:
+            return result.group(1) == 'T'
+    @property
+    @make_cached
     def lreal(self):
         """ Greps LREAL from OUTCAR. """
         result = self._find_first_OUTCAR(r"""\s*LREAL\s*=\s*(T|F)\s+""")
