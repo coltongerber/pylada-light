@@ -60,7 +60,7 @@ class ExtractBase(object):
         """ True if this is a DFT calculation, as opposed to GW. """
         try:
             return self.algo not in ['gw', 'gw0', 'chi', 'scgw', 'scgw0']
-        except:
+        except: # noqa: E722
             return False
 
     # fixmod:
@@ -71,7 +71,7 @@ class ExtractBase(object):
         """ True if this is a GW calculation, as opposed to DFT. """
         try:
             return self.algo in ['gw', 'gw0', 'chi', 'scgw', 'scgw0']
-        except:
+        except: # noqa: E722
             return False
 
     @property
@@ -116,7 +116,7 @@ class ExtractBase(object):
         # otherwise, just try the objvious. but it really should fail at this
         # point.
         return input.vasp
-
+            
     @property
     def success(self):
         """ Checks that VASP run has completed.
@@ -127,7 +127,7 @@ class ExtractBase(object):
         regex = r"""General\s+timing\s+and\s+accounting\s+informations\s+for\s+this\s+job"""
         try:
             return self._find_last_OUTCAR(regex) is not None
-        except:
+        except: # noqa: E722
             return False
 
     @property
@@ -151,7 +151,7 @@ class ExtractBase(object):
             lines = file.readlines()
         for line in lines:
             mat = re.match(regex, line)
-            if mat != None:
+            if mat is not None:
                 cpuTime = float(mat.group(1))
                 realTime = float(mat.group(2))
                 tlist.append([cpuTime, realTime])
@@ -192,7 +192,7 @@ class ExtractBase(object):
             try:
                 for i in range(3):
                     result.cell[:, i] = array(data[i][:3], dtype='float64')
-            except:
+            except: # noqa: E722
                 for i in range(3):
                     result.cell[i,:] = array(data[i][-3:], dtype='float64')
                 result.cell = inv(result.cell)
@@ -250,7 +250,7 @@ class ExtractBase(object):
         try:
             for i in range(3):
                 result.cell[:, i] = array(lines[-cell_index + i].split()[:3], dtype="float64")
-        except:
+        except: # noqa: E722
             for i in range(3):
                 result.cell[i,:] = array(lines[-cell_index + i].split()[-3:], dtype="float64")
             result.cell = inv(result.cell)
@@ -272,7 +272,7 @@ class ExtractBase(object):
 
         try:
             result = self._contcar_structure
-        except:
+        except:  # noqa: E722
             result = self._grep_structure
 
         # tries to find adequate name for structure.
@@ -295,7 +295,7 @@ class ExtractBase(object):
 
         try:
             initial = self.initial_structure
-        except:
+        except: # noqa: E722
             pass
         else:
             for key, value in initial.__dict__.items():
@@ -309,7 +309,7 @@ class ExtractBase(object):
         # adds magnetization.
         try:
             magnetization = self.magnetization
-        except:
+        except: # noqa: E722
             pass
         else:
             if magnetization is not None:
@@ -319,12 +319,12 @@ class ExtractBase(object):
         # adds stress.
         try:
             result.stress = self.stress
-        except:
+        except: # noqa: E722
             pass
         # adds forces.
         try:
             forces = self.forces
-        except:
+        except: # noqa: E722
             pass
         else:
             for force, atom in zip(forces, result):
@@ -336,7 +336,7 @@ class ExtractBase(object):
     def LDAUType(self):
         """ Type of LDA+U performed. """
         type = self._find_first_OUTCAR(r"""LDAUTYPE\s*=\s*(\d+)""")
-        if type == None:
+        if type is None:
             return None
         type = int(type.group(1))
         if type == 1:
@@ -352,7 +352,7 @@ class ExtractBase(object):
         from ..specie import U as ldaU, nlep
         from re import M
         type = self._find_first_OUTCAR(r"""LDAUTYPE\s*=\s*(\d+)""")
-        if type == None:
+        if type is None:
             return {}
         type = int(type.group(1))
 
