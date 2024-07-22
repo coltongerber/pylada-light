@@ -1824,6 +1824,24 @@ class ExtractBase(object):
                     warnings.append(line[:-1])
         return warnings
 
+    # colton_mod_start
+
+    @property
+    @make_cached
+    def pbsscript(self):
+        """ Retrieves SLURM settings written in pbsscript file. """
+        import os
+        import re
+        script_path = os.path.join(self.directory, 'pbsscript')
+        with open(script_path) as file:
+            slurm_dict = {}
+            for line in file:
+                if line[:7] == '#SBATCH':
+                    start = line.index('-')
+                    setting = re.split('=|\s', line[start:])
+                    slurm_dict[setting[0]] = setting[1]
+        
+        return slurm_dict
     def __dir__(self):
         """ Attributes and members of this class.
 
