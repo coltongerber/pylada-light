@@ -101,7 +101,7 @@ def main():
 
     jobfolder = jobfolder.load(options.pickle, timeout=timeout)
     print(('  ipy/lau/scattered_script: jobfolder: %s' % jobfolder))
-    print(('  ipy/lau/scattered_script: options here: %s' % options))
+    print(('  ipy/lau/scattered_script: options: %s' % options))
     for name in options.names:
         logger.info('ipy/lau/scattered_script: testValidProgram: %s' % testValidProgram)
         logger.info('ipy/lau/scattered_script: name: %s' % name)
