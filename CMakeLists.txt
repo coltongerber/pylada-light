@@ -66,41 +66,41 @@ else()
     set(PYVER PY2)
 endif()
 
-if(NOT SKBUILD)
-    # get numpy include directory
-    execute_process(
-        COMMAND
-        ${Python3_EXECUTABLE} -c "import skbuild; print(skbuild.__file__)"
-        OUTPUT_VARIABLE SKBUILD_LOCATION
-        RESULT_VARIABLE SKBUILD_FOUND
-        ERROR_QUIET
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
-    if(NOT SKBUILD_FOUND EQUAL 0 OR NOT SKBUILD_LOCATION)
-        message(FATAL_ERROR "Could not find numpy includes")
-    else()
-        set(SKBUILD_FOUND True)
-        get_filename_component(SKBUILD_LOCATION "${SKBUILD_LOCATION}" DIRECTORY)
-    endif()
-    message(STATUS "Found skbuild at ${SKBUILD_LOCATION}")
-    list(APPEND CMAKE_MODULE_PATH "${SKBUILD_LOCATION}/resources/cmake")
+# if(NOT SKBUILD)
+# get numpy include directory
+execute_process(
+    COMMAND
+    ${Python3_EXECUTABLE} -c "import skbuild; print(skbuild.__file__)"
+    OUTPUT_VARIABLE SKBUILD_LOCATION
+    RESULT_VARIABLE SKBUILD_FOUND
+    ERROR_QUIET
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(NOT SKBUILD_FOUND EQUAL 0 OR NOT SKBUILD_LOCATION)
+    message(FATAL_ERROR "Could not find numpy includes")
+else()
+    set(SKBUILD_FOUND True)
+    get_filename_component(SKBUILD_LOCATION "${SKBUILD_LOCATION}" DIRECTORY)
 endif()
+message(STATUS "Found skbuild at ${SKBUILD_LOCATION}")
+list(APPEND CMAKE_MODULE_PATH "${SKBUILD_LOCATION}/resources/cmake")
+# endif()
 
-#NumPy headers
-execute_process(
-  COMMAND "${PYTHON_EXECUTABLE}"
-  -c "import numpy; print(numpy.get_include())"
-  OUTPUT_VARIABLE NumPy_INCLUDE_DIRS
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+# #NumPy headers
+# execute_process(
+#   COMMAND "${PYTHON_EXECUTABLE}"
+#   -c "import numpy; print(numpy.get_include())"
+#   OUTPUT_VARIABLE NumPy_INCLUDE_DIRS
+#   OUTPUT_STRIP_TRAILING_WHITESPACE
+# )
 
-# f2py headers
-execute_process(
-  COMMAND "${PYTHON_EXECUTABLE}"
-  -c "import numpy.f2py; print(numpy.f2py.get_include())"
-  OUTPUT_VARIABLE F2PY_INCLUDE_DIR
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-find_package(F2PY REQUIRED)
+# # f2py headers
+# execute_process(
+#   COMMAND "${PYTHON_EXECUTABLE}"
+#   -c "import numpy.f2py; print(numpy.f2py.get_include())"
+#   OUTPUT_VARIABLE F2PY_INCLUDE_DIR
+#   OUTPUT_STRIP_TRAILING_WHITESPACE
+# )
+# find_package(F2PY REQUIRED)
 
 
 find_package(PythonExtensions REQUIRED)
@@ -108,11 +108,11 @@ find_package(Cython REQUIRED)
 find_package(NumPy REQUIRED)
 find_package(Eigen3 NO_MODULE)
 
-# Use NumPy_INCLUDE_DIRS and F2PY_INCLUDE_DIR
-target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
-                           ${F2PY_INCLUDE_DIR}
-                           ${NumPy_INCLUDE_DIRS}
-                           ${PYTHON_INCLUDE_DIRS})
+# # Use NumPy_INCLUDE_DIRS and F2PY_INCLUDE_DIR
+# target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
+#                            ${F2PY_INCLUDE_DIR}
+#                            ${NumPy_INCLUDE_DIRS}
+#                            ${PYTHON_INCLUDE_DIRS})
 
 set(PY_ROOT_DIR "src/pylada")
 set(PY_HEADER_DIR "${PROJECT_SOURCE_DIR}/src")
