@@ -110,7 +110,14 @@ cmake_print_variables(SKBUILD_LOCATION)
 find_package(PythonExtensions REQUIRED)
 find_package(Cython REQUIRED)
 cmake_print_variables(CMAKE_MODULE_PATH)
+cmake_print_variables(NUMPY_ROOT)
+cmake_print_variables(NUMPY_ROOT_DIR)
+cmake_print_variables(NUMPY_INCLUDE_DIRS)
 find_package(NumPy REQUIRED)
+cmake_print_variables(NUMPY_ROOT)
+cmake_print_variables(NUMPY_ROOT_DIR)
+cmake_print_variables(NUMPY_INCLUDE_DIRS)
+
 find_package(Eigen3 NO_MODULE)
 
 # # Use NumPy_INCLUDE_DIRS and F2PY_INCLUDE_DIR
