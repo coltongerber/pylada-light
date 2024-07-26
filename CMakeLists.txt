@@ -85,6 +85,14 @@ if(NOT SKBUILD)
     list(APPEND CMAKE_MODULE_PATH "${SKBUILD_LOCATION}/resources/cmake")
 endif()
 
+#NumPy headers
+execute_process(
+  COMMAND "${PYTHON_EXECUTABLE}"
+  -c "import numpy; print(numpy.get_include())"
+  OUTPUT_VARIABLE NumPy_INCLUDE_DIRS
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
 find_package(PythonExtensions REQUIRED)
 find_package(Cython REQUIRED)
 find_package(NumPy REQUIRED)
