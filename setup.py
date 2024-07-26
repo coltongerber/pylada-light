@@ -5,6 +5,10 @@ from sys import platform, version_info
 import setuptools
 from setuptools import find_packages
 from skbuild import setup
+# colton_mod_start
+import numpy
+# colton_mod_end
+
 
 old_setup = setuptools.setup
 
@@ -71,4 +75,7 @@ setup(
     extras_require={"dev": tests_require},
     cmake_args=cmake_args,
     cmake_languages=("CXX", "Fortran"),
+    # colton_mod_start
+    include_dirs=[numpy.get_include()]
+    # colton_mod_end
 )
