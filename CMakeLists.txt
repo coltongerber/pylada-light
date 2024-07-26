@@ -108,6 +108,12 @@ find_package(Cython REQUIRED)
 find_package(NumPy REQUIRED)
 find_package(Eigen3 NO_MODULE)
 
+# Use NumPy_INCLUDE_DIRS and F2PY_INCLUDE_DIR
+target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
+                           ${F2PY_INCLUDE_DIR}
+                           ${NumPy_INCLUDE_DIRS}
+                           ${PYTHON_INCLUDE_DIRS})
+
 set(PY_ROOT_DIR "src/pylada")
 set(PY_HEADER_DIR "${PROJECT_SOURCE_DIR}/src")
 add_subdirectory(${PY_ROOT_DIR})
