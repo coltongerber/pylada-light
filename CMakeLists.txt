@@ -66,7 +66,8 @@ else()
     set(PYVER PY2)
 endif()
 
-message(SKBUILD="${SKBUILD}")
+include(CMakePrintHelpers)
+cmake_print_variables(SKBUILD)
 if(NOT SKBUILD)
     # get numpy include directory
     execute_process(
@@ -85,7 +86,8 @@ if(NOT SKBUILD)
     message(STATUS "Found skbuild at ${SKBUILD_LOCATION}")
     list(APPEND CMAKE_MODULE_PATH "${SKBUILD_LOCATION}/resources/cmake")
 endif()
-message(SKBUILD_LOCATION="${SKBUILD_LOCATION}")
+cmake_print_variables(SKBUILD_LOCATION)
+
 
 # #NumPy headers
 # execute_process(
@@ -107,6 +109,7 @@ message(SKBUILD_LOCATION="${SKBUILD_LOCATION}")
 
 find_package(PythonExtensions REQUIRED)
 find_package(Cython REQUIRED)
+cmake_print_variables(CMAKE_MODULE_PATH)
 find_package(NumPy REQUIRED)
 find_package(Eigen3 NO_MODULE)
 
