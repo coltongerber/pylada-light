@@ -66,8 +66,6 @@ else()
     set(PYVER PY2)
 endif()
 
-include(CMakePrintHelpers)
-cmake_print_variables(SKBUILD)
 if(NOT SKBUILD)
     # get numpy include directory
     execute_process(
@@ -86,49 +84,12 @@ if(NOT SKBUILD)
     message(STATUS "Found skbuild at ${SKBUILD_LOCATION}")
     list(APPEND CMAKE_MODULE_PATH "${SKBUILD_LOCATION}/resources/cmake")
 endif()
-cmake_print_variables(SKBUILD_LOCATION)
-
-
-# #NumPy headers
-# execute_process(
-#   COMMAND "${PYTHON_EXECUTABLE}"
-#   -c "import numpy; print(numpy.get_include())"
-#   OUTPUT_VARIABLE NumPy_INCLUDE_DIRS
-#   OUTPUT_STRIP_TRAILING_WHITESPACE
-# )
-
-# # f2py headers
-# execute_process(
-#   COMMAND "${PYTHON_EXECUTABLE}"
-#   -c "import numpy.f2py; print(numpy.f2py.get_include())"
-#   OUTPUT_VARIABLE F2PY_INCLUDE_DIR
-#   OUTPUT_STRIP_TRAILING_WHITESPACE
-# )
-# find_package(F2PY REQUIRED)
-
 
 find_package(PythonExtensions REQUIRED)
 find_package(Cython REQUIRED)
-cmake_print_variables(CMAKE_MODULE_PATH)
-cmake_print_variables(NUMPY_ROOT)
-cmake_print_variables(NUMPY_ROOT_DIR)
-cmake_print_variables(NUMPY_INCLUDE_DIRS)
-list(APPEND CMAKE_PREFIX_PATH "/u/af/cf/cgerber/scratch/conda/envs/nequip_061/lib/python3.12/site-packages/numpy/_core/include")
-cmake_print_variables(CMAKE_PREFIX_PATH)
-# find_package(NumPy REQUIRED HINTS "/u/af/cf/cgerber/scratch/conda/envs/nequip_061/lib/python3.12/site-packages/numpy/_core/include")
+list(APPEND CMAKE_PREFIX_PATH "/u/af/cf/cgerber/scratch/conda/envs/nequip_061/lib/python3.12/site-packages/numpy/_core/include" )
 find_package(NumPy REQUIRED)
-
-cmake_print_variables(NUMPY_ROOT)
-cmake_print_variables(NUMPY_ROOT_DIR)
-cmake_print_variables(NUMPY_INCLUDE_DIRS)
-
 find_package(Eigen3 NO_MODULE)
-
-# # Use NumPy_INCLUDE_DIRS and F2PY_INCLUDE_DIR
-# target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
-#                            ${F2PY_INCLUDE_DIR}
-#                            ${NumPy_INCLUDE_DIRS}
-#                            ${PYTHON_INCLUDE_DIRS})
 
 set(PY_ROOT_DIR "src/pylada")
 set(PY_HEADER_DIR "${PROJECT_SOURCE_DIR}/src")
