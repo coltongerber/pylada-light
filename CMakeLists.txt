@@ -49,7 +49,7 @@ endif()
 
 set(OLD_CMAKE_FIND_FRAMEWORK "${CMAKE_FIND_FRAMEWORK}")
 set(CMAKE_FIND_FRAMEWORK LAST)
-find_package(Python3 REQUIRED COMPONENTS Development Interpreter NumPy)
+find_package(Python3 COMPONENTS Development Interpreter)
 message(STATUS "Python3_FOUND: ${Python3_FOUND}")
 message(STATUS "Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
 set(CMAKE_FIND_FRAMEWORK "${OLD_CMAKE_FIND_FRAMEWORK}")
