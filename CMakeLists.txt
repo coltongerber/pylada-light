@@ -50,8 +50,6 @@ endif()
 set(OLD_CMAKE_FIND_FRAMEWORK "${CMAKE_FIND_FRAMEWORK}")
 set(CMAKE_FIND_FRAMEWORK LAST)
 find_package(Python3 COMPONENTS Development Interpreter)
-message(STATUS "Python3_FOUND: ${Python3_FOUND}")
-message(STATUS "Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
 set(CMAKE_FIND_FRAMEWORK "${OLD_CMAKE_FIND_FRAMEWORK}")
 if(NOT Python3_FOUND)
     set(CMAKE_FIND_FRAMEWORK LAST)
@@ -89,7 +87,7 @@ endif()
 
 find_package(PythonExtensions REQUIRED)
 find_package(Cython REQUIRED)
-message(STATUS "Python3_EXECUTABLE before python -c: ${Python3_EXECUTABLE}")
+
 execute_process(
     COMMAND
     ${Python3_EXECUTABLE} -c "import numpy; print(numpy.get_include())"
@@ -97,19 +95,13 @@ execute_process(
     RESULT_VARIABLE NUMPY_INCLUDE_FOUND
     ERROR_QUIET
     OUTPUT_STRIP_TRAILING_WHITESPACE)
-execute_process(
-    COMMAND
-    ${Python3_EXECUTABLE} -c "import os; print(os.environ)"
-    OUTPUT_VARIABLE OS_ENVIRON
-    ERROR_QUIET
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-message(STATUS "Environment: ${OS_ENVIRON}")
 if(NOT NUMPY_INCLUDE_FOUND EQUAL 0 OR NOT NUMPY_INCLUDE_LOCATION)
-    message(FATAL_ERROR "Could not find numpy include (numpy.get_include())")
+    message(FATAL_ERROR "Could not find numpy include (using numpy.get_include())")
 endif()
 message(STATUS "Found numpy include at ${NUMPY_INCLUDE_LOCATION}")
 list(APPEND CMAKE_PREFIX_PATH "${NUMPY_INCLUDE_LOCATION}")
 find_package(NumPy REQUIRED)
+
 find_package(Eigen3 NO_MODULE)
 
 set(PY_ROOT_DIR "src/pylada")
