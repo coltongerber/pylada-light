@@ -108,7 +108,7 @@ if(NOT NUMPY_INCLUDE_FOUND EQUAL 0 OR NOT NUMPY_INCLUDE_LOCATION)
     message(FATAL_ERROR "Could not find numpy include (numpy.get_include())")
 endif()
 message(STATUS "Found numpy include at ${NUMPY_INCLUDE_LOCATION}")
-list(APPEND CMAKE_PREFIX_PATH NUMPY_INCLUDE_LOCATION)
+list(APPEND CMAKE_PREFIX_PATH "/u/af/cf/cgerber/scratch/.conda/envs/pylada_test/lib/python3.12/site-packages/numpy/_core/include")
 find_package(NumPy REQUIRED)
 find_package(Eigen3 NO_MODULE)
 
