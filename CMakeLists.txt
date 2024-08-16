@@ -101,7 +101,7 @@ find_package(Cython REQUIRED)
 # endif()
 # message(STATUS "Found numpy include at ${NUMPY_INCLUDE_LOCATION}")
 # list(APPEND CMAKE_PREFIX_PATH NUMPY_INCLUDE_LOCATION)
-# find_package(NumPy REQUIRED)
+find_package(NumPy REQUIRED)
 find_package(Eigen3 NO_MODULE)
 
 set(PY_ROOT_DIR "src/pylada")
