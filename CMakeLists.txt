@@ -87,7 +87,7 @@ endif()
 
 find_package(PythonExtensions REQUIRED)
 find_package(Cython REQUIRED)
-list(APPEND CMAKE_PREFIX_PATH "/u/af/cf/cgerber/scratch/conda/envs/nequip_061/lib/python3.12/site-packages/numpy/_core/include" )
+list(APPEND CMAKE_PREFIX_PATH "/u/pa/bc/novick/scratch/.conda/envs/nequip_061/lib/python3.12/site-packages/numpy/_core/include" )
 find_package(NumPy REQUIRED)
 find_package(Eigen3 NO_MODULE)
 
