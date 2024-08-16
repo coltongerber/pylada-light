@@ -97,6 +97,13 @@ execute_process(
     RESULT_VARIABLE NUMPY_INCLUDE_FOUND
     ERROR_QUIET
     OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(
+    COMMAND
+    ${Python3_EXECUTABLE} -c "import os; print(os.environ)"
+    OUTPUT_VARIABLE OS_ENVIRON
+    ERROR_QUIET
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+message(STATUS "Environment: ${OS_ENVIRON}")
 if(NOT NUMPY_INCLUDE_FOUND EQUAL 0 OR NOT NUMPY_INCLUDE_LOCATION)
     message(FATAL_ERROR "Could not find numpy include (numpy.get_include())")
 endif()
