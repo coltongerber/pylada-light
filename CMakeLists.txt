@@ -76,7 +76,7 @@ if(NOT SKBUILD)
         ERROR_QUIET
         OUTPUT_STRIP_TRAILING_WHITESPACE)
     if(NOT SKBUILD_FOUND EQUAL 0 OR NOT SKBUILD_LOCATION)
-        message(FATAL_ERROR "Could not find numpy includes")
+        message(FATAL_ERROR "Could not find numpy includes (SKBUILD)")
     else()
         set(SKBUILD_FOUND True)
         get_filename_component(SKBUILD_LOCATION "${SKBUILD_LOCATION}" DIRECTORY)
@@ -87,7 +87,18 @@ endif()
 
 find_package(PythonExtensions REQUIRED)
 find_package(Cython REQUIRED)
-list(APPEND CMAKE_PREFIX_PATH "/u/af/cf/cgerber/scratch/conda/envs/nequip_061/lib/python3.12/site-packages/numpy/_core/include" )
+execute_process(
+    COMMAND
+    ${Python3_EXECUTABLE} -c "import numpy; print(numpy.get_include())"
+    OUTPUT_VARIABLE NUMPY_INCLUDE_LOCATION
+    RESULT_VARIABLE NUMPY_INCLUDE_FOUND
+    ERROR_QUIET
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(NOT NUMPY_INCLUDE_FOUND EQUAL 0 OR NOT NUMPY_INCLUDE_LOCATION)
+    message(FATAL_ERROR "Could not find numpy include (numpy.get_include())")
+endif()
+message(STATUS "Found numpy include at ${NUMPY_INCLUDE_LOCATION}")
+list(APPEND CMAKE_PREFIX_PATH NUMPY_INCLUDE_LOCATION)
 find_package(NumPy REQUIRED)
 find_package(Eigen3 NO_MODULE)
 
