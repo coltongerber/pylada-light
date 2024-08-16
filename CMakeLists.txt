@@ -92,7 +92,7 @@ find_package(Cython REQUIRED)
 message(STATUS "Python3_EXECUTABLE before python -c: ${Python3_EXECUTABLE}")
 execute_process(
     COMMAND
-    ${Python3_EXECUTABLE} -c "import numpy; print('/u/af/cf/cgerber/scratch/.conda/envs/pylada_test/lib/python3.12/site-packages/numpy/_core/include')"
+    ${Python3_EXECUTABLE} -c "import numpy; print(numpy.get_include())"
     OUTPUT_VARIABLE NUMPY_INCLUDE_LOCATION
     RESULT_VARIABLE NUMPY_INCLUDE_FOUND
     ERROR_QUIET
