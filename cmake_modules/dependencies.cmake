@@ -33,6 +33,7 @@ endif()
 find_python_package(IPython)
 find_python_package(numpy)
 
+include(FetchContent)
 FetchContent_Declare(
   quantities
   GIT_REPOSITORY https://github.com/python-quantities/python-quantities.git@refs/pull/235/head
