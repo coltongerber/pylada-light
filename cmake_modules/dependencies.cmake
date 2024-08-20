@@ -32,7 +32,14 @@ endif()
 
 find_python_package(IPython)
 find_python_package(numpy)
+
+FetchContent_Declare(
+  quantities
+  GIT_REPOSITORY https://github.com/python-quantities/python-quantities.git@refs/pull/235/head
+  GIT_TAG        b6efa33bb86d2c4a1dcfa4ca81927564a4b2f055 # commit "full separate numpy > 2.0 array wrap" on Jul 24 2024 from PR 235 
+)
 find_python_package(quantities)
+
 find_python_package(f90nml)
 find_python_package(six)
 find_python_package(traitlets)
