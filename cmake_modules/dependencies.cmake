@@ -39,6 +39,7 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/python-quantities/python-quantities.git@refs/pull/235/head
   GIT_TAG        b6efa33bb86d2c4a1dcfa4ca81927564a4b2f055 # commit "full separate numpy > 2.0 array wrap" on Jul 24 2024 from PR 235 
   OVERRIDE_FIND_PACKAGE
+  OVERRIDE_FIND_PYTHON_PACKAGE
 )
 find_python_package(quantities)
 
