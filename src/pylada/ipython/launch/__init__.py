@@ -168,11 +168,8 @@ def get_mppalloc(shell, event, withdefault=True):
             natom = len(job.structure)  # number of atoms.
             # Round down to a multiple of ppn
 #vladan            nnode = max(1, natom / event.ppn)
-            # colton_mod_start
-            # nnode = max(1, natom // event.ppn)
-            # nproc = nnode * event.ppn
-            nproc = natom
-            # colton_mod_end
+            nnode = max(1, natom // event.ppn)
+            nproc = nnode * event.ppn
             return nproc
     logger.info("launch/init: mppalloc b: %s" % mppalloc)
     return mppalloc
