@@ -178,7 +178,7 @@ def get_mppalloc(shell, event, withdefault=True):
 def get_walltime(shell, event, pbsargs):
     """ Returns walltime. """
     from re import match
-    if match("\s*(\d{1,3}):(\d{1,2}):(\d{1,2})\s*", event.walltime) is None:
+    if match(r"\s*(\d{1,3}):(\d{1,2}):(\d{1,2})\s*", event.walltime) is None:
         try:
             walltime = shell.ev(event.walltime)
         except Exception as e:
@@ -187,7 +187,7 @@ def get_walltime(shell, event, pbsargs):
             return False
     else:
         walltime = event.walltime
-    walltime = match("\s*(\d{1,3}):(\d{1,2}):(\d{1,2})\s*", walltime)
+    walltime = match(r"\s*(\d{1,3}):(\d{1,2}):(\d{1,2})\s*", walltime)
     if walltime is not None:
         a, b, c = walltime.group(1), walltime.group(2), walltime.group(3)
         walltime = "{0:0>2}:{1:0>2}:{2:0>2}".format(a, b, c)
