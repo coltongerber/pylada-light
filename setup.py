@@ -25,7 +25,7 @@ install_requires = [
     "py",
     "numpy",
     "scipy",
-    "quantities",
+    "quantities @ git+https://github.com/python-quantities/python-quantities.git@refs/pull/235/head",
     "cython",
     "six",
     "traitlets",
