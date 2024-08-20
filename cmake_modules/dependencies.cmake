@@ -41,7 +41,7 @@ FetchContent_Declare(
   OVERRIDE_FIND_PACKAGE
   OVERRIDE_FIND_PYTHON_PACKAGE
 )
-find_python_package(quantities)
+FetchContent_MakeAvailable(quantities)
 
 find_python_package(f90nml)
 find_python_package(six)
