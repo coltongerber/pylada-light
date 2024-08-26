@@ -39,8 +39,8 @@ def main():
 
     parser = ArgumentParser(prog="runone", description=re.sub("\\s+", " ", __doc__[1:]))
     # colton_mod_start: Change logging level to debug
-    # parser.add_argument('--logging', dest="logging", default="critical", type=str,
-    parser.add_argument('--logging', dest="logging", default="debug", type=str,
+    parser.add_argument('--logging', dest="logging", default="critical", type=str,
+    # parser.add_argument('--logging', dest="logging", default="debug", type=str,
                         help="Debug level.")
     # colton_mod_end
     parser.add_argument('--testValidProgram', dest="testValidProgram",
