@@ -25,7 +25,7 @@ install_requires = [
     "py",
     "numpy",
     "scipy",
-    "quantities",
+    "quantities>=0.16.0",
     "cython",
     "six",
     "traitlets",
