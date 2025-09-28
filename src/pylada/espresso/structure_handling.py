@@ -205,9 +205,14 @@ def add_structure(structure, f90namelist, cards):
     f90namelist['system']['ntyp'] = len(set([u.type for u in structure]))
 
     card_dict = {card.name: card for card in cards}
-    if 'cell' not in card_dict:
+    # colton_bug
+    # if 'cell' not in card_dict:
+    if 'cell' not in card_dict and 'cell_parameters' not in card_dict:
         cell = Card('cell_parameters')
         cards.append(cell)
+    elif 'cell_parameters' in card_dict:
+        cell = card_dict['cell_parameters']
+    # colton_bug end
     else:
         cell = card_dict['cell']
     cell.subtitle = 'alat'

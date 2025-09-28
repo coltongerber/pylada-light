@@ -207,7 +207,10 @@ class Extract(object):
         from quantities import kilobar
         from numpy import array
         lines = match.group(1).rstrip().lstrip().split('\n')
-        return array([u.split()[3:6] for u in lines], dtype='float64') * kilobar
+        # colton_bug
+        # return array([u.split()[3:6] for u in lines], dtype='float64') * kilobar # this gives you stress in a.u.?
+        return array([u.split()[0:3] for u in lines], dtype='float64')
+        # colton_bug
 
     @property
     @make_cached
