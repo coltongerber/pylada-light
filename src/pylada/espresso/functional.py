@@ -31,6 +31,7 @@ from . import Namelist
 from .card import Card
 from .pwscf_namelists import Control, System, Electrons, Ions, Cell, alias
 from .namelists import input_transform
+from .extract import Extract
 
 
 class Pwscf(HasTraits):
@@ -331,8 +332,9 @@ class Pwscf(HasTraits):
             return structure
 
         # normalize: restart could be an Extract object, or a path
-#vladan        restart = self.Extract(restart)
-        restart = self.Extract(str(outdir),prefix=self.control.prefix)
+        if not isinstance(restart, Extract):
+            restart = self.Extract(str(restart),prefix=self.control.prefix)
+            
         if not restart.success:
             logger.critical("Cannot restart from unsuccessful calculation")
             raise error.RuntimeError("Cannot restart from unsuccessful calculation")
