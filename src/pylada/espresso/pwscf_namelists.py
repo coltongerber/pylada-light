@@ -70,7 +70,7 @@ class Control(Namelist):
                           help="Convergence criteria for total energy")
     force_conv_thr = Float(allow_none=True, default_value=None,
                            help="Convergence criteria for forces")
-    disk_io = Enum(['high', 'medium', 'low', 'none'], default_value=None,
+    disk_io = Enum(['high', 'medium', 'low', 'nowf', 'minimal', 'none'], default_value=None,
                    allow_none=True, help="Amount of disk IO")
 
     @input_transform
