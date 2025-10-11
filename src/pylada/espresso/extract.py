@@ -234,6 +234,53 @@ class Extract(object):
         """ True if restarted from wavefunction file """
         return match is not None
 
+    def _find_outputs(self):
+        """Builds list of Quantum ESPRESSO stdout files from relaxation chain.
+
+        Recursively walks `self.directory` and collects files named
+        `f"{self.prefix}.out"` (e.g., `pwscf.out`).
+        """
+        import os
+
+        relax_dir = self.directory
+        outs = []
+        for root, dirs, files in os.walk(relax_dir):
+            for name in files:
+                if name == f"{self.prefix}.out":
+                    outs.append(os.path.join(root, name))
+        return outs
+
+    @property
+    @make_cached
+    def compTime(self):
+        """Sum of wall times at end of pwscf.out files for all restarts, in hours.
+
+        Parses lines like:
+            "PWSCF        :    570.29s CPU    670.94s WALL"
+        found near the end of each `prefix.out` and sums the WALL seconds.
+        """
+        from quantities import hour
+        from numpy import array
+        import re
+
+        outs = self._find_outputs()
+        total_hours = 0.0
+        for path in outs:
+            wall_hours = 0.0
+            try:
+                with open(path, 'r') as f:
+                    tail = f.readlines()[-50:]
+                # Search from the end for the PWSCF timing line
+                for line in reversed(tail):
+                    m = re.search(r"PWSCF\s*:\s*([\d.]+)s\s*CPU\s*([\d.]+)s\s*WALL", line)
+                    if m:
+                        wall_hours = float(m.group(2)) / 3600.0
+                        break
+            except Exception:
+                pass
+            total_hours += wall_hours
+        return array(round(total_hours, 4)) * hour
+
     def __directory_hook__(self):
         """ Called whenever the directory changes. """
         self.uncache()
