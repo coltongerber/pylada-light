@@ -194,7 +194,7 @@ class Extract(object):
 
     @property
     @make_cached
-    @grepper(r"\!\s*total energy\s*=\s*(\S*) Ry", fail=True)
+    @grepper(r"\!?\s*total energy\s*=\s*(\S*) Ry", fail=True)
     def total_energy(self, match):
         """ Total energy at the end of the calculation """
         from quantities import Ry
