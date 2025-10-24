@@ -58,6 +58,8 @@ class Pwscf(HasTraits):
         self.__namelists = Namelist()
         self.__cards = {}
         self.species = {}
+        self.starting_magnetization = {}
+
         """ Dictionary of species that can be used in the calculation
 
             A specie is an object with at least a 'filename' attribute pointing to the
@@ -131,6 +133,27 @@ class Pwscf(HasTraits):
             dictionary.pop('ions', None)
         if self.control.calculation not in ['vc-relax', 'vc-md']:
             dictionary.pop('cell', None)
+            
+    @input_transform
+    def __add_starting_magnetization_if_spin_polarized(self, dictionary, structure=None, **kwargs):
+        """ Adds starting_magnetization to &system when nspin=2 """
+        
+        # Check if this is a spin-polarized calculation
+        if dictionary.get('system', {}).get('nspin', 1) != 2:
+            return
+        
+        if structure is None:
+            return
+        
+        # Get unique species in structure
+        species_in_structure = sorted(set([atom.type for atom in structure]))
+        
+        # Add starting_magnetization for each species
+        for i, specie_name in enumerate(species_in_structure, start=1):
+            key = f'starting_magnetization({i})'
+            # Use user-defined value if available, otherwise default to 0.0
+            mag_value = self.starting_magnetization.get(specie_name, 0.0)
+            dictionary['system'][key] = mag_value
 
     def read(self, filename, clear=True):
         """ Read from a file """
@@ -149,6 +172,11 @@ class Pwscf(HasTraits):
         filename = local_path(filename)
         logger.info("%s: Reading from file %s", self.__class__.__name__, filename)
         self.__namelists.read(filename)
+        
+        # Handle starting_magnetization: f90nml reads it as a list, but System trait expects dict
+        # Remove it from namelists to avoid TraitError when restarting calculations
+        if hasattr(self.__namelists, 'system') and hasattr(self.__namelists.system, 'starting_magnetization'):
+            delattr(self.__namelists.system, 'starting_magnetization')
 
         traits = set(self.trait_names()).intersection(self.__namelists.names())
         for traitname in traits:
