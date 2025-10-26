@@ -136,24 +136,41 @@ class Pwscf(HasTraits):
             
     @input_transform
     def __add_starting_magnetization_if_spin_polarized(self, dictionary, structure=None, **kwargs):
-        """ Adds starting_magnetization to &system when nspin=2 """
+        """ Adds starting_magnetization to &system when nspin=2 (collinear only)
+        
+        Skips if noncolin=.true. or if starting_magnetization entries already exist.
+        """
+        sysnml = dictionary.get('system', {})
+        
+        # Noncollinear handled elsewhere
+        if sysnml.get('noncolin', False):
+            return
         
         # Check if this is a spin-polarized calculation
-        if dictionary.get('system', {}).get('nspin', 1) != 2:
+        if sysnml.get('nspin', 1) != 2:
             return
         
         if structure is None:
             return
         
-        # Get unique species in structure
-        species_in_structure = sorted(set([atom.type for atom in structure]))
+        # If starting_magnetization already specified, do nothing
+        if any(k.startswith('starting_magnetization(') for k in sysnml.keys()) or \
+           ('starting_magnetization' in sysnml):
+            return
         
-        # Add starting_magnetization for each species
+        # Get unique species in structure (deterministic order by first appearance)
+        species_in_structure = []
+        for atom in structure:
+            if atom.type not in species_in_structure:
+                species_in_structure.append(atom.type)
+        
+        # Add starting_magnetization for each species (1-based index)
         for i, specie_name in enumerate(species_in_structure, start=1):
             key = f'starting_magnetization({i})'
-            # Use user-defined value if available, otherwise default to 0.0
             mag_value = self.starting_magnetization.get(specie_name, 0.0)
-            dictionary['system'][key] = mag_value
+            sysnml[key] = mag_value
+        
+        dictionary['system'] = sysnml
 
     def read(self, filename, clear=True):
         """ Read from a file """
