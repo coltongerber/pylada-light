@@ -75,16 +75,37 @@ See `config/slurm_srun_example.py` for a complete example.
 When you use the srun launcher, Pylada:
 
 1. Collects all jobs to run from the jobfolder
-2. Creates a single SLURM script with one allocation
-3. Inside that script, launches each calculation with:
-   ```bash
-   srun -N <nodes> -n <nprocs> --ntasks-per-node=<ppn> --exclusive \
-        python script.py --jobid=<name> <path> &
-   ```
-4. All `srun` commands run in the background (`&`)
-5. A `wait` command ensures the SLURM job doesn't exit until all complete
+2. Calculates maximum concurrent jobs based on allocation size and job requirements
+3. Creates a single SLURM script with intelligent job throttling
+4. Inside that script, uses either:
+   - **GNU parallel** (if available): Manages job queue automatically with `-j` flag
+   - **Bash job control** (fallback): Custom semaphore-style throttling using `wait -n`
+
+The script launches each calculation with:
+```bash
+srun -N <nodes> -n <nprocs> --ntasks-per-node=<ppn> --exclusive \
+     python script.py --jobid=<name> <path>
+```
+
+### Automatic Resource Management
+
+The launcher automatically:
+- **Calculates max concurrent jobs**: `total_nodes / nodes_per_job`
+- **Throttles job submission**: Only launches new jobs as resources become available
+- **Prevents oversubscription**: Ensures no more than max concurrent jobs run
+- **Waits for completion**: Monitors all jobs until completion
 
 The `--exclusive` flag ensures each calculation gets exclusive access to its assigned resources, preventing interference between concurrent calculations.
+
+### Example: 10 Jobs on 4 Nodes
+
+If you have 10 jobs that each need 1 node, and allocate 4 nodes:
+1. Jobs 1-4 start immediately
+2. Job 5 waits for any of jobs 1-4 to finish
+3. As soon as job 1 completes, job 5 starts
+4. This continues until all 10 jobs complete
+
+This ensures efficient resource utilization without overwhelming the system.
 
 ## Resource Allocation Logic
 
@@ -216,13 +237,45 @@ job.tag = True
 #SBATCH -J pylada_srun
 #SBATCH -D /path/to/work/dir
 
-# Launch all jobs using srun in background
-srun -N 1 -n 16 --ntasks-per-node=16 --exclusive python script.py --jobid=calc1 jobfolder.pkl &
-srun -N 1 -n 16 --ntasks-per-node=16 --exclusive python script.py --jobid=calc2 jobfolder.pkl &
-srun -N 1 -n 16 --ntasks-per-node=16 --exclusive python script.py --jobid=calc3 jobfolder.pkl &
-srun -N 1 -n 16 --ntasks-per-node=16 --exclusive python script.py --jobid=calc4 jobfolder.pkl &
-wait
+# Check if GNU parallel is available for better job management
+if command -v parallel &> /dev/null; then
+  echo 'Using GNU parallel for job management'
+  JOBS[0]='srun -N 1 -n 16 --ntasks-per-node=16 --exclusive python script.py --jobid=calc1 jobfolder.pkl'
+  JOBS[1]='srun -N 1 -n 16 --ntasks-per-node=16 --exclusive python script.py --jobid=calc2 jobfolder.pkl'
+  JOBS[2]='srun -N 1 -n 16 --ntasks-per-node=16 --exclusive python script.py --jobid=calc3 jobfolder.pkl'
+  # ... more jobs ...
+  printf '%s\n' "${JOBS[@]}" | parallel -j 4 --halt soon,fail=1
+else
+  # Fallback: use bash job control with semaphore-style throttling
+  MAX_JOBS=4
+  JOBS=()
+  JOBS+=( 'srun -N 1 -n 16 --ntasks-per-node=16 --exclusive python script.py --jobid=calc1 jobfolder.pkl' )
+  JOBS+=( 'srun -N 1 -n 16 --ntasks-per-node=16 --exclusive python script.py --jobid=calc2 jobfolder.pkl' )
+  # ... more jobs ...
+  
+  running_jobs=0
+  for job_cmd in "${JOBS[@]}"; do
+    # Wait if we've hit the max concurrent jobs
+    while [ $running_jobs -ge $MAX_JOBS ]; do
+      wait -n  # Wait for any job to finish
+      running_jobs=$((running_jobs - 1))
+    done
+    
+    # Launch the job in background
+    eval "$job_cmd" &
+    running_jobs=$((running_jobs + 1))
+  done
+  
+  # Wait for all remaining jobs to complete
+  wait
+fi
 ```
+
+**Key features:**
+- Automatically detects GNU parallel for optimal performance
+- Falls back to bash job control if parallel is unavailable
+- Throttles job submission to prevent resource exhaustion
+- Maximum concurrent jobs calculated from allocation size
 
 ### Implementation Files
 

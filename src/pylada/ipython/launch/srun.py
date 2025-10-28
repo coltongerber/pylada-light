@@ -137,13 +137,21 @@ def launch(self, event, jobfolders):
     pbsargs['logging'] = 'debug'
     pbsargs['testValidProgram'] = testValidProgram
 
-    # Build the script command that will launch all jobs using srun
-    job_list = []
+    # Calculate max concurrent jobs based on resources
+    # Each job needs certain number of nodes
+    total_nodes = pbsargs['nnodes']
+    
+    # Build job list with proper resource management
+    job_commands = []
     for job_info in all_jobs:
+        nodes_per_job = (job_info['nprocs'] + pbsargs['ppn'] - 1) // pbsargs['ppn']
+        # Use --exclusive to ensure each calculation gets exclusive access to its nodes
+        # This prevents MPI interference between concurrent calculations
+        # The throttling mechanism ensures we don't exceed the allocation
         job_cmd = "srun -N {nnodes} -n {nprocs} --ntasks-per-node={ppn} --exclusive " \
                   "python {pyscript} --logging {logging} --testValidProgram {testValidProgram} " \
-                  "--nbprocs {nprocs} --ppn {ppn} --jobid={jobid} {path} &".format(
-                      nnodes=(job_info['nprocs'] + pbsargs['ppn'] - 1) // pbsargs['ppn'],
+                  "--nbprocs {nprocs} --ppn {ppn} --jobid={jobid} {path}".format(
+                      nnodes=nodes_per_job,
                       nprocs=job_info['nprocs'],
                       ppn=pbsargs['ppn'],
                       pyscript=pyscript,
@@ -152,10 +160,53 @@ def launch(self, event, jobfolders):
                       jobid=job_info['name'],
                       path=job_info['path']
                   )
-        job_list.append(job_cmd)
+        job_commands.append(job_cmd)
     
-    # Add wait command to wait for all background srun jobs
-    job_list.append("wait")
+    # Calculate max concurrent jobs (based on smallest job size to be safe)
+    min_nodes_per_job = min((j['nprocs'] + pbsargs['ppn'] - 1) // pbsargs['ppn'] for j in all_jobs)
+    max_concurrent = max(1, total_nodes // min_nodes_per_job)
+    
+    print(f"Resource allocation: {total_nodes} nodes, max {max_concurrent} concurrent jobs")
+    print(f"Jobs will be throttled and launched as resources become available")
+    
+    # Build script with job throttling using GNU parallel if available, otherwise use bash job control
+    job_list = []
+    job_list.append("# Check if GNU parallel is available for better job management")
+    job_list.append("if command -v parallel &> /dev/null; then")
+    job_list.append("  echo 'Using GNU parallel for job management'")
+    
+    # Create array of job commands for parallel
+    for i, cmd in enumerate(job_commands):
+        job_list.append(f"  JOBS[{i}]='{cmd}'")
+    
+    job_list.append(f"  printf '%s\\n' \"${{JOBS[@]}}\" | parallel -j {max_concurrent} --halt soon,fail=1")
+    job_list.append("else")
+    job_list.append("  # Fallback: use bash job control with semaphore-style throttling")
+    job_list.append(f"  MAX_JOBS={max_concurrent}")
+    job_list.append("  JOBS=()")
+    
+    for cmd in job_commands:
+        # Escape single quotes in the command
+        escaped_cmd = cmd.replace("'", "'\\''")
+        job_list.append(f"  JOBS+=( '{escaped_cmd}' )")
+    
+    job_list.append("""
+  running_jobs=0
+  for job_cmd in "${JOBS[@]}"; do
+    # Wait if we've hit the max concurrent jobs
+    while [ $running_jobs -ge $MAX_JOBS ]; do
+      wait -n  # Wait for any job to finish
+      running_jobs=$((running_jobs - 1))
+    done
+    
+    # Launch the job in background
+    eval "$job_cmd" &
+    running_jobs=$((running_jobs + 1))
+  done
+  
+  # Wait for all remaining jobs to complete
+  wait
+fi""")
     
     pbsargs['srun_commands'] = '\n'.join(job_list)
     
