@@ -145,9 +145,6 @@ def launch(self, event, jobfolders):
     job_commands = []
     for job_info in all_jobs:
         nodes_per_job = (job_info['nprocs'] + pbsargs['ppn'] - 1) // pbsargs['ppn']
-        # Use --exclusive to ensure each calculation gets exclusive access to its nodes
-        # This prevents MPI interference between concurrent calculations
-        # The throttling mechanism ensures we don't exceed the allocation
         job_cmd = "srun -N {nnodes} -n {nprocs} --ntasks-per-node={ppn} --exclusive " \
                   "python {pyscript} --logging {logging} --testValidProgram {testValidProgram} " \
                   "--nbprocs {nprocs} --ppn {ppn} --jobid={jobid} {path}".format(
@@ -162,9 +159,9 @@ def launch(self, event, jobfolders):
                   )
         job_commands.append(job_cmd)
     
-    # Calculate max concurrent jobs (based on smallest job size to be safe)
-    min_nodes_per_job = min((j['nprocs'] + pbsargs['ppn'] - 1) // pbsargs['ppn'] for j in all_jobs)
-    max_concurrent = max(1, total_nodes // min_nodes_per_job)
+    # Calculate max concurrent jobs (based on largest job size to avoid oversubscription)
+    max_nodes_per_job = max((j['nprocs'] + pbsargs['ppn'] - 1) // pbsargs['ppn'] for j in all_jobs)
+    max_concurrent = max(1, total_nodes // max_nodes_per_job)
     
     print(f"Resource allocation: {total_nodes} nodes, max {max_concurrent} concurrent jobs")
     print(f"Jobs will be throttled and launched as resources become available")
