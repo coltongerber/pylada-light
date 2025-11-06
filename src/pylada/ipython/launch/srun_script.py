@@ -49,6 +49,8 @@ def main():
     parser.add_argument("--ppath", dest="ppath", default=None,
                         help="Directory to add to python path",
                         metavar="Directory")
+    parser.add_argument('--nbnodes', dest="nbnodes", default=1, type=int,
+                        help="Number of nodes allocated to this job.")
     parser.add_argument('--nbprocs', dest="nbprocs", default=pylada.default_comm['n'], type=int,
                         help="Number of processors with which to launch job.")
     parser.add_argument('--ppn', dest="ppn", default=pylada.default_comm['ppn'], type=int,
@@ -85,6 +87,7 @@ def main():
 
     # Set up mpi processes - use srun instead of mpirun
     pylada.default_comm['ppn'] = options.ppn
+    pylada.default_comm['N'] = options.nbnodes
     pylada.default_comm['n'] = options.nbprocs
     
     # For srun, we don't need to call create_global_comm since srun handles MPI setup
@@ -93,8 +96,9 @@ def main():
         pylada.default_comm = None
     # Otherwise, we need to modify mpirun_exe to use srun
     else:
-        # Override mpirun_exe to use srun for this job
-        pylada.mpirun_exe = "srun -n {n} {program}"
+        # Use srun with -N to specify nodes explicitly from the allocation
+        # This creates proper job steps without nested srun issues
+        pylada.mpirun_exe = "srun -N {N} -n {n} {program}"
 
     timeout = None if options.timeout <= 0 else options.timeout
 
