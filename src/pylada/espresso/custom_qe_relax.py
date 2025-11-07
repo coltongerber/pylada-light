@@ -3,12 +3,12 @@
 class CustomChain(object):
 
     # Defining the folder tree structure
-    def __init__(self, pwobj=None, maxiter=20):
+    def __init__(self, pwobj=None, maxiter=20, en_conv=1.e-6):
 
         import os
 
         self.maxiter = maxiter
-        self.en_conv = 1.e-6
+        self.en_conv = en_conv
         #self.file_to_copy = '/beegfs/sets/mbd/pylada_chains/vdw_kernel.bindat'
         #assert os.path.exists(self.file_to_copy), "The file %s does not exist" %(self.file_to_copy)
         self.names=['relax_cellshape','relax_ions','./']
