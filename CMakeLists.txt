@@ -5,7 +5,7 @@ project(Pylada
     HOMEPAGE_URL "https://www.github.com/pylada/pylada-light"
     LANGUAGES C CXX Fortran)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RelWithDebInfo)

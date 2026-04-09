@@ -31,6 +31,7 @@ from . import Namelist
 from .card import Card
 from .pwscf_namelists import Control, System, Electrons, Ions, Cell, alias
 from .namelists import input_transform
+from .extract import Extract
 
 
 class Pwscf(HasTraits):
@@ -57,6 +58,8 @@ class Pwscf(HasTraits):
         self.__namelists = Namelist()
         self.__cards = {}
         self.species = {}
+        self.starting_magnetization = {}
+
         """ Dictionary of species that can be used in the calculation
 
             A specie is an object with at least a 'filename' attribute pointing to the
@@ -130,6 +133,44 @@ class Pwscf(HasTraits):
             dictionary.pop('ions', None)
         if self.control.calculation not in ['vc-relax', 'vc-md']:
             dictionary.pop('cell', None)
+            
+    @input_transform
+    def __add_starting_magnetization_if_spin_polarized(self, dictionary, structure=None, **kwargs):
+        """ Adds starting_magnetization to &system when nspin=2 (collinear only)
+        
+        Skips if noncolin=.true. or if starting_magnetization entries already exist.
+        """
+        sysnml = dictionary.get('system', {})
+        
+        # Noncollinear handled elsewhere
+        if sysnml.get('noncolin', False):
+            return
+        
+        # Check if this is a spin-polarized calculation
+        if sysnml.get('nspin', 1) != 2:
+            return
+        
+        if structure is None:
+            return
+        
+        # If starting_magnetization already specified, do nothing
+        if any(k.startswith('starting_magnetization(') for k in sysnml.keys()) or \
+           ('starting_magnetization' in sysnml):
+            return
+        
+        # Get unique species in structure (deterministic order by first appearance)
+        species_in_structure = []
+        for atom in structure:
+            if atom.type not in species_in_structure:
+                species_in_structure.append(atom.type)
+        
+        # Add starting_magnetization for each species (1-based index)
+        for i, specie_name in enumerate(species_in_structure, start=1):
+            key = f'starting_magnetization({i})'
+            mag_value = self.starting_magnetization.get(specie_name, 0.0)
+            sysnml[key] = mag_value
+        
+        dictionary['system'] = sysnml
 
     def read(self, filename, clear=True):
         """ Read from a file """
@@ -148,6 +189,11 @@ class Pwscf(HasTraits):
         filename = local_path(filename)
         logger.info("%s: Reading from file %s", self.__class__.__name__, filename)
         self.__namelists.read(filename)
+        
+        # Handle starting_magnetization: f90nml reads it as a list, but System trait expects dict
+        # Remove it from namelists to avoid TraitError when restarting calculations
+        if hasattr(self.__namelists, 'system') and hasattr(self.__namelists.system, 'starting_magnetization'):
+            delattr(self.__namelists.system, 'starting_magnetization')
 
         traits = set(self.trait_names()).intersection(self.__namelists.names())
         for traitname in traits:
@@ -331,8 +377,9 @@ class Pwscf(HasTraits):
             return structure
 
         # normalize: restart could be an Extract object, or a path
-#vladan        restart = self.Extract(restart)
-        restart = self.Extract(str(outdir),prefix=self.control.prefix)
+        if not isinstance(restart, Extract):
+            restart = self.Extract(str(restart),prefix=self.control.prefix)
+            
         if not restart.success:
             logger.critical("Cannot restart from unsuccessful calculation")
             raise error.RuntimeError("Cannot restart from unsuccessful calculation")
