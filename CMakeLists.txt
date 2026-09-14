@@ -22,6 +22,11 @@ if(tests)
   enable_testing()
 endif(tests)
 
+# Default ON: a system Eigen avoids downloading Eigen 3.3.7, whose CMakeLists declares
+# cmake_minimum_required < 3.5 and therefore cannot configure under cmake 4. If no
+# system Eigen is found this simply falls through to the download below, so enabling
+# it by default cannot break a host that lacks one.
+option(CHECK_FOR_EIGEN_FIRST "Use an installed Eigen3 if one can be found" ON)
 if(CHECK_FOR_EIGEN_FIRST)
     find_package (Eigen3 3.3 NO_MODULE)
 endif()
