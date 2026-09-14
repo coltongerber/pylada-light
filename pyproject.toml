@@ -1,3 +1,6 @@
 [build-system]
 requires = ["setuptools", "wheel", "scikit-build",
-            "cmake!=3.16.3", "ninja", "cython", "numpy"]
+            # cmake 4 removed compatibility with cmake_minimum_required < 3.5, which the
+            # vendored Eigen 3.3.7 still declares; cython >= 3.1 emits
+            # __pyx_tp_new_vectorcall_* references that do not compile.
+            "cmake>=3.17,<4", "ninja", "cython<3.1", "numpy"]
