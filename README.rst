@@ -66,10 +66,20 @@ Installation for development
         source pylada/bin/activate
         git clone https://github.com/pylada/pylada-light
         cd pylada-light
-        python -m pip install cython setuptools wheel scikit-build cmake ninja numpy
+        python -m pip install "cython<3.1" setuptools wheel scikit-build "cmake>=3.17,<4" ninja numpy
         python -m pip install -e .[dev]
         python setup.py test
         ln -s src/pylada . # because https://github.com/scikit-build/scikit-build/issues/363
+
+    .. note::
+
+        ``cmake`` and ``cython`` are pinned deliberately, matching
+        ``build-system.requires`` in ``pyproject.toml``. cmake 4 removed support for
+        ``cmake_minimum_required(VERSION < 3.5)``, which the vendored Eigen 3.3.7 still
+        declares, and cython 3.1+ emits vectorcall references that do not compile. If
+        you have a system Eigen available, configuring with
+        ``-DCHECK_FOR_EIGEN_FIRST=ON`` (the default) uses it and avoids the Eigen
+        download entirely.
 
     The above creates a virtual environment and installs pylada inside it in
     development mode. This means that the virtual environment will know about
