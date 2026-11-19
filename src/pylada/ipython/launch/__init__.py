@@ -59,6 +59,7 @@ def launch(self, event):
     from .asone import parser as asone_parser
     from .array import parser as array_parser
     from .single import parser as single_parser
+    from .srun import parser as srun_parser
     from ...misc import RelativePath, LockFile
 
     # main parser
@@ -81,6 +82,7 @@ def launch(self, event):
     interactive_parser(self, subparsers, opalls)
     asone_parser(self, subparsers, opalls)
     single_parser(self, subparsers, opalls)
+    srun_parser(self, subparsers, opalls)
     if qsub_array_exe is not None:
         array_parser(self, subparsers, opalls)
 
@@ -130,6 +132,7 @@ def completer(self, info):
     from .asone import completer as asone_completer
     from .array import completer as array_completer
     from .single import completer as single_completer
+    from .srun import completer as srun_completer
     from ... import qsub_array_exe
 
     data = info.line.split()[1:]
@@ -141,9 +144,11 @@ def completer(self, info):
         return asone_completer(self, info, data)
     elif "single" in data:
         return single_completer(self, info, data)
+    elif "srun" in data:
+        return srun_completer(self, info, data)
     elif qsub_array_exe is not None and "array" in data:
         return array_completer(self, info, data)
-    result = ["scattered", "interactive", 'asone', 'single', '--help']
+    result = ["scattered", "interactive", 'asone', 'single', 'srun', '--help']
     return result + ['array'] if qsub_array_exe is not None else result
 
 

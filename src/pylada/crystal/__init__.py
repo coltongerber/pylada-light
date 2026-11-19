@@ -25,7 +25,8 @@ __docformat__ = "restructuredtext en"
 __all__ = ['Atom', 'Structure', 'space_group', 'cell_invariants', 'smith_normal_form', 'gruber',
            'supercell', 'into_cell', 'into_voronoi', 'zero_centered', 'are_periodic_images',
            'HFTransform', 'primitive', 'is_primitive', 'neighbors', 'coordination_shells',
-           'map_sites', 'iterator', 'specieset', 'transform', 'vasp_ordered', 'which_site']
+           'map_sites', 'iterator', 'specieset', 'transform', 'vasp_ordered', 'which_site',
+           'Sq', 'PDF']
 
 from .atom import Atom
 from .structure import Structure
@@ -36,6 +37,7 @@ from .hart_forcade import HFTransform
 from ._primitive import primitive, is_primitive
 from ._coordination_shells import coordination_shells, neighbors
 from ._map_sites import map_sites
+from .structure_functions import Sq, PDF
 from . import iterator
 
 

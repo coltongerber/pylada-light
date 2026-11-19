@@ -25,7 +25,7 @@
 __docformat__ = "restructuredtext en"
 __all__ = ['alias', 'Control', 'System', 'Electrons', 'Ions', 'Cell']
 from quantities import second, Ry, kilobar
-from traitlets import Integer, Bool, Enum, Float
+from traitlets import Integer, Bool, Enum, Float, Dict
 from .namelists import input_transform
 from .trait_types import DimensionalTrait, dimensional_trait_as_other, String as StringTrait, \
      CaselessStringEnum
@@ -70,7 +70,7 @@ class Control(Namelist):
                           help="Convergence criteria for total energy")
     force_conv_thr = Float(allow_none=True, default_value=None,
                            help="Convergence criteria for forces")
-    disk_io = Enum(['high', 'medium', 'low', 'none'], default_value=None,
+    disk_io = Enum(['high', 'medium', 'low', 'nowf', 'minimal', 'none'], default_value=None,
                    allow_none=True, help="Amount of disk IO")
 
     @input_transform
@@ -87,6 +87,9 @@ class System(Namelist):
     nbnd = Integer(default_value=None, allow_none=True, help="Number of bands")
     tot_charge = Float(default_value=None, allow_none=True, help="Total charge of the system")
     tot_magnetization = Float(default_value=None, allow_none=True, help="Total magnetization")
+    starting_magnetization = Dict(default_value=None, allow_none=True,
+                                  help="Starting spin polarization for atomic species. "
+                                  "For multiple species, set as dictionary indexed by species.")
     ecutwfc = DimensionalTrait(Ry, allow_none=True, default_value=None,
                                help="Kinetic energy cutoff for wavefunctions")
     __set_ecutwfc = dimensional_trait_as_other('ecutwfc', ecutwfc)
@@ -104,6 +107,42 @@ class System(Namelist):
     degauss = DimensionalTrait(Ry, allow_none=True, default_value=None,
                                help="Typical energy associated with smearing")
     __set_degauss = dimensional_trait_as_other('degauss', degauss)
+
+    @input_transform
+    def __convert_starting_magnetization(self, dictionary, structure=None, **kwargs):
+        """ Converts element-based starting_magnetization dict to species-indexed format 
+        
+            If starting_magnetization is a dictionary with string keys (element symbols),
+            converts it to the indexed format expected by Quantum ESPRESSO, where indices
+            correspond to the order of species in the structure.
+        """
+        mag = dictionary.get('starting_magnetization', None)
+        if mag is None or not isinstance(mag, dict):
+            return
+        
+        # Check if dictionary has string keys (element symbols)
+        if not any(isinstance(k, str) for k in mag.keys()):
+            return
+        
+        # Need structure to determine species order
+        if structure is None:
+            return
+        
+        # Get unique species in order they appear
+        species_list = []
+        for atom in structure:
+            if atom.type not in species_list:
+                species_list.append(atom.type)
+        
+        # Convert element-based dict to indexed dict
+        indexed_mag = {}
+        for element_symbol, value in mag.items():
+            if element_symbol in species_list:
+                # Quantum ESPRESSO uses 1-based indexing
+                index = species_list.index(element_symbol) + 1
+                indexed_mag[index] = value
+        
+        dictionary['starting_magnetization'] = indexed_mag
 
     @input_transform
     def __ecutwfc_is_required(self, dictionary, **kwargs):
