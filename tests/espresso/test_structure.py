@@ -171,6 +171,26 @@ def test_write_read_loop(tmpdir, pwscfin):
         assert reread[i].type == structure[i].type
 
 
+def test_add_structure_reuses_cell_parameters_card(pwscfin):
+    """An existing CELL_PARAMETERS card is overwritten, not duplicated."""
+    from numpy import allclose
+    from f90nml import Namelist as F90Namelist
+    from pylada.espresso.card import Card
+    from pylada.espresso.structure_handling import add_structure, read_structure
+    structure = read_structure(str(pwscfin))
+
+    stale = Card('cell_parameters', subtitle='bohr', value='9 0 0\n0 9 0\n0 0 9\n')
+    cards = [stale]
+    add_structure(structure, F90Namelist(), cards)
+
+    cell_cards = [c for c in cards if c.name == 'cell_parameters']
+    assert len(cell_cards) == 1
+    assert cell_cards[0] is stale
+    assert cell_cards[0].subtitle == 'alat'
+    rows = [[float(x) for x in line.split()] for line in stale.value.splitlines()]
+    assert allclose(rows, structure.cell.transpose())
+
+
 def test_read_forces(tmpdir):
     from quantities import Ry, bohr_radius as a0
     from numpy import allclose
